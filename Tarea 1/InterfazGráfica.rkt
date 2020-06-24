@@ -6,7 +6,7 @@
 ;;----------------------------Elementos de inicialización----------------------------------------------------
   
 ;; Anchura de la ventana de gráficos
-(define horizontal 900)
+(define horizontal 1100)
 
 ;; Altura de la ventana de gráficos
 (define vertical 700)
@@ -19,6 +19,10 @@
 
 ;Se crea un rectángulo negro de fondo
 ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "black")
+
+;; Se inicializan las imagenes de inicializacion del juego
+((draw-pixmap oculta) "TTT-1.png" (make-posn 600 100))
+((draw-pixmap oculta) "bv.jpg" (make-posn 200 10))
 
 ;Se muestra un texto con las instrucciones para inicializar el juego
 ((draw-string oculta) (make-posn 200 300) "Inicializa el juego poniendo en la consola (TTT m n), donde m y n son números" "white")
@@ -86,7 +90,7 @@
 ;; y: posición en y donde se quiere poner la imagen
 
 (define (dibujarX x y)
-  ((draw-pixmap oculta) "x.png" (make-posn (+ 35 (* 65 x)) (- (* 65 y) 55)))
+  ((draw-pixmap oculta) "x-1.png" (make-posn (+ 45 (* 65 x)) (- (* 65 y) 45)))
   (copy-viewport oculta ventana))
 
 
@@ -95,7 +99,7 @@
 ;; y: posición en y donde se quiere poner la imagen
 
 (define (dibujarO x y)
-  ((draw-pixmap oculta) "circulo.png" (make-posn (+ 35 (* 65 x)) (- (* 65 y) 55)))
+  ((draw-pixmap oculta) "circulo-1.png" (make-posn (+ 45 (* 65 x)) (- (* 65 y) 45)))
   (copy-viewport oculta ventana))
 
 
@@ -177,7 +181,7 @@
          (dibujarX (car col) (car fila))
          punto)
         (else
-         (msj "Clickee en otra parte")))))
+         (msj "Haga click en otra parte")))))
          
 
 
@@ -224,7 +228,15 @@
 
 (define (TTT m n)
   (cond ((and (>= m 3) (<= m 10) (>= n 3) (<= n 10))
-         ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "black")
+         ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "white")
+         ((draw-pixmap oculta) "fondo.jpg" (make-posn 800 0))
+         ((draw-solid-rectangle oculta) (make-posn 850 65) 180 30 "black")
+         ((draw-string oculta) (make-posn 910 85) "Tu ficha es:" "red")
+         ((draw-pixmap oculta) "x-2.png" (make-posn 880 100))
+         ((draw-solid-rectangle oculta) (make-posn 800 300) 300 4 "white")
+         ((draw-solid-rectangle oculta) (make-posn 850 320) 180 30 "black")
+         ((draw-string oculta) (make-posn 900 340) "La ficha rival es:" "red")
+         ((draw-pixmap oculta) "circulo-2.png" (make-posn 880 375))
          (crearLineas m n)(copy-viewport oculta ventana)
          (mouse m n '()))
         (else
