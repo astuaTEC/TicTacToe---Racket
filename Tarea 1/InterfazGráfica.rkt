@@ -1,5 +1,6 @@
 #lang racket
 (require graphics/graphics)
+(require racket/draw)
 (open-graphics)
 
 
@@ -196,6 +197,35 @@
   (close-viewport ventana2))
 
 
+;;Funcion para dibijar una linea entre 2 puntos (Horizontal y Diagonal)
+;; Recibe un col1 , fila1 ,col2, fila2
+;; col1, fila1: posiciones desde donde sale la linea (posiciones en la matriz)
+;; col2, fila2: posiciones hasta donde llega la linea (posiciones en la matriz)
+
+(define (dibujarLineaHD fila1 col1 fila2 col2)
+  ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 27)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 27)) "black")
+  ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 26)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 26)) "black")
+  ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 25)) "black")
+  ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 24)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 24)) "black")
+  ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 23)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 23)) "black")
+  (copy-viewport oculta ventana))
+ 
+
+;;Funcion para dibijar una linea entre 2 puntos (Vertical)
+;; Recibe un col1 , fila1 ,col2, fila2
+;; col1, fila1: posiciones desde donde sale la linea (posiciones en la matriz)
+;; col2, fila2: posiciones hasta donde llega la linea (posiciones en la matriz)
+
+(define (dibujarLineaV fila1 col1 fila2 col2)
+  ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 25)) "black")
+  ((draw-line oculta) (make-posn (+ 66 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 66 (* 65 col2)) (- (* 65 fila2) 25)) "black")
+  ((draw-line oculta) (make-posn (+ 67 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 67 (* 65 col2)) (- (* 65 fila2) 25)) "black")
+  ((draw-line oculta) (make-posn (+ 68 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 68 (* 65 col2)) (- (* 65 fila2) 25)) "black")
+  ((draw-line oculta) (make-posn (+ 69 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 69 (* 65 col2)) (- (* 65 fila2) 25)) "black")
+  (copy-viewport oculta ventana))
+ 
+
+
 ;; Funcion para encontar si un elemento se encuentra
 ;; en una lista
 ;; ele: símbolo cualquiera
@@ -231,13 +261,15 @@
          ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "white")
          ((draw-pixmap oculta) "fondo.jpg" (make-posn 800 0))
          ((draw-solid-rectangle oculta) (make-posn 850 65) 180 30 "black")
-         ((draw-string oculta) (make-posn 910 85) "Tu ficha es:" "red")
+         ((draw-string oculta) (make-posn 900 85) "TU FICHA ES:" "red")
          ((draw-pixmap oculta) "x-2.png" (make-posn 880 100))
-         ((draw-solid-rectangle oculta) (make-posn 800 300) 300 4 "white")
-         ((draw-solid-rectangle oculta) (make-posn 850 320) 180 30 "black")
-         ((draw-string oculta) (make-posn 900 340) "La ficha rival es:" "red")
-         ((draw-pixmap oculta) "circulo-2.png" (make-posn 880 375))
+         ((draw-solid-rectangle oculta) (make-posn 800 350) 300 4 "white")
+         ((draw-solid-rectangle oculta) (make-posn 855 380) 180 30 "black")
+         ((draw-string oculta) (make-posn 875 400) "LA FICHA RIVAL ES:" "red")
+         ((draw-pixmap oculta) "circulo-2.png" (make-posn 880 415))
          (crearLineas m n)(copy-viewport oculta ventana)
+         ;(dibujarLineaHD 1 1 1 10)
+         ;(dibujarLineaV 1 1 10 1)
          (mouse m n '()))
         (else
          (msj "Inserte números válidos"))))
