@@ -4,7 +4,7 @@
 (open-graphics)
 
 
-;;----------------------------Elementos de inicialización----------------------------------------------------
+;;------------------------------------------------ELEMENTOS DE INICIALIZACION----------------------------------------------------
   
 ;; Anchura de la ventana de gráficos
 (define horizontal 1100)
@@ -13,7 +13,7 @@
 (define vertical 700)
 
 ;; Se crea una ventana gráfica
-(define ventana (open-viewport "ventana" horizontal vertical) )
+(define ventana (open-viewport "TicTacToe" horizontal vertical) )
 
 ;;Se crea una ventana oculta pixmap
 (define oculta (open-pixmap "oculta" horizontal vertical))
@@ -22,15 +22,15 @@
 ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "black")
 
 ;; Se inicializan las imagenes de inicializacion del juego
-((draw-pixmap oculta) "TTT-1.png" (make-posn 600 100))
-((draw-pixmap oculta) "bv.jpg" (make-posn 200 10))
+((draw-pixmap oculta) "imgs/TTT-1.png" (make-posn 600 100))
+((draw-pixmap oculta) "imgs/bv.jpg" (make-posn 200 10))
 
 ;Se muestra un texto con las instrucciones para inicializar el juego
-((draw-string oculta) (make-posn 200 300) "Inicializa el juego poniendo en la consola (TTT m n), donde m y n son números" "white")
-((draw-string oculta) (make-posn 200 330) "Deben ser números entre 3 y 10" "white")
+((draw-pixmap oculta) "imgs/inst.png" (make-posn 100 200))
 
 
-;---------------------------------------------------------------------------------------------------------------------------------------------
+
+;-------------------------------------------------------TABLERO GRAFICO---------------------------------------------------------
 
 ;; Funcion para crear el tablero TicTacToe
 ;; m: número de filas. Número entero
@@ -38,8 +38,8 @@
 
 (define (crearLineas m n)
   (cond ((and (>= m 3) (<= m 10) (>= n 3) (<= n 10))
-      (dibujarFilas (- m 1) n)
-      (dibujarCol (- n 1) m))
+      (dibujarFilas (- n 1) m)
+      (dibujarCol (- m 1) n))
 
         (else
          #f)))
@@ -69,6 +69,27 @@
          (dibujarCol (- n 1) largo))))
 
 
+;-------------------------------------------DIBUJAR FICHAS EN LA PANTALLA----------------------------------------------------------
+
+;; Función para dibujar el síbolo X en pantalla
+;; x: posición en x donde se quiere poner la imagen
+;; y: posición en y donde se quiere poner la imagen
+
+(define (dibujarX x y)
+  ((draw-pixmap oculta) "imgs/x-1.png" (make-posn (+ 45 (* 65 x)) (- (* 65 y) 45)))
+  (copy-viewport oculta ventana))
+
+
+;; Función para dibujar el síbolo O en pantalla
+;; x: posición en x donde se quiere poner la imagen
+;; y: posición en y donde se quiere poner la imagen
+
+(define (dibujarO x y)
+  ((draw-pixmap oculta) "imgs/circulo-1.png" (make-posn (+ 45 (* 65 x)) (- (* 65 y) 45)))
+  (copy-viewport oculta ventana))
+
+
+;----------------------------------------------FUNCIONES PARA IMPLEMENTAR EL MOUSE------------------------------------------------------
 
 ;; Función para saber si se hace click izquierdo
 ;; en la ventana del juego, obteniendo las coordenadas X y Y en pixeles
@@ -81,27 +102,9 @@
          (x (posn-x (query-mouse-posn ventana)))
          (y (posn-y (query-mouse-posn ventana))))
   (cond ((equal? (left-mouse-click? click)
-         (mouse m n (pegar lista (list (verificarDibujoX x y m n lista))))))
+         (mouse m n (pegar lista (list (verificarDibujoX x y n m lista))))))
   (else
    (mouse m n lista)))))
-
-
-;; Función para dibujar el síbolo X en pantalla
-;; x: posición en x donde se quiere poner la imagen
-;; y: posición en y donde se quiere poner la imagen
-
-(define (dibujarX x y)
-  ((draw-pixmap oculta) "x-1.png" (make-posn (+ 45 (* 65 x)) (- (* 65 y) 45)))
-  (copy-viewport oculta ventana))
-
-
-;; Función para dibujar el síbolo O en pantalla
-;; x: posición en x donde se quiere poner la imagen
-;; y: posición en y donde se quiere poner la imagen
-
-(define (dibujarO x y)
-  ((draw-pixmap oculta) "circulo-1.png" (make-posn (+ 45 (* 65 x)) (- (* 65 y) 45)))
-  (copy-viewport oculta ventana))
 
 
 ;; Función que devuelve la fila
@@ -163,6 +166,7 @@
         (else
          #f)))
 
+;---------------------------------------------VERIFICACION DE LOS CLICKS-------------------------------------------------------------------
 
 ;; Función para verificar si la
 ;; cuadrícula disponible permite
@@ -186,16 +190,41 @@
          
 
 
+;---------------------------------------------------FUNCIONES PARA CREAR VENTANAS------------------------------------------------------------
+
 ;; Función para mostrar ventanas de alerta
 ;; txt: Es un string, siendo este el texto a mostrar
 
 (define (msj texto)
-  (define ventana2 (open-viewport "Alerta" 300 50))
+  (define ventana2 (open-viewport "Alerta" 300 150))
   ((draw-viewport ventana2) "black")
-  ((draw-string ventana2) (make-posn 50 20) texto "red")
+  ((draw-pixmap ventana2) "imgs/alerta.png" (make-posn 0 0))
   (sleep 2)
   (close-viewport ventana2))
 
+
+;; Función para mostrar la ventana del ganador
+
+(define (ventanaGanador)
+  (define ventana3 (open-viewport "Ganador" 600 320))
+  ((draw-viewport ventana3) "black")
+  ((draw-pixmap ventana3) "imgs/ganador.png" (make-posn 0 0))
+  (sleep 4)
+  (close-viewport ventana)
+  (close-viewport ventana3))
+
+
+;; Función para mostrar la ventana del perdedor
+
+(define (ventanaPerdedor)
+  (define ventana4 (open-viewport "Perdedor" 600 320))
+  ((draw-viewport ventana4) "black")
+  ((draw-pixmap ventana4) "imgs/perdedor.png" (make-posn 0 0))
+  (sleep 4)
+  (close-viewport ventana)
+  (close-viewport ventana4))
+
+;----------------------------------------------------LINEAS GRAFICAS--------------------------------------------------------------------
 
 ;;Funcion para dibijar una linea entre 2 puntos (Horizontal y Diagonal)
 ;; Recibe un col1 , fila1 ,col2, fila2
@@ -225,6 +254,7 @@
   (copy-viewport oculta ventana))
  
 
+;------------------------------------------FUNCIONES AUXILIARES DE IMPLEMENTACION------------------------------------------------------------
 
 ;; Funcion para encontar si un elemento se encuentra
 ;; en una lista
@@ -251,6 +281,7 @@
         (cons (car lista1)
               (pegar (cdr lista1) lista2)))))
 
+;-------------------------------------------------FUNCION DE INICIALIZACION DEL JUEGO-----------------------------------------------------
 
 ;; Función que inicializa el juego
 ;; Lo que hace es llamar las funciones que crean
@@ -259,14 +290,14 @@
 (define (TTT m n)
   (cond ((and (>= m 3) (<= m 10) (>= n 3) (<= n 10))
          ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "white")
-         ((draw-pixmap oculta) "fondo.jpg" (make-posn 800 0))
+         ((draw-pixmap oculta) "imgs/fondo.jpg" (make-posn 800 0))
          ((draw-solid-rectangle oculta) (make-posn 850 65) 180 30 "black")
          ((draw-string oculta) (make-posn 900 85) "TU FICHA ES:" "red")
-         ((draw-pixmap oculta) "x-2.png" (make-posn 880 100))
-         ((draw-solid-rectangle oculta) (make-posn 800 350) 300 4 "white")
+         ((draw-pixmap oculta) "imgs/x-22.png" (make-posn 880 100))
+         ((draw-solid-rectangle oculta) (make-posn 800 350) 300 8 "white")
          ((draw-solid-rectangle oculta) (make-posn 855 380) 180 30 "black")
          ((draw-string oculta) (make-posn 875 400) "LA FICHA RIVAL ES:" "red")
-         ((draw-pixmap oculta) "circulo-2.png" (make-posn 880 415))
+         ((draw-pixmap oculta) "imgs/circulo-22.png" (make-posn 880 415))
          (crearLineas m n)(copy-viewport oculta ventana)
          ;(dibujarLineaHD 1 1 1 10)
          ;(dibujarLineaV 1 1 10 1)
@@ -277,7 +308,6 @@
 
 
 (copy-viewport oculta ventana)
-
 
 
 
