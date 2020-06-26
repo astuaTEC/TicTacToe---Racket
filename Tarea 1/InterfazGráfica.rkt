@@ -134,7 +134,7 @@
         ((and (<= 595 y) (> 660 y))
          '(10))
         (else
-         #f)))
+         (list y))))
 
 
 ;; Función que devuelve la columna
@@ -164,7 +164,7 @@
         ((and (<= 685 x) (> 750 x))
          '(10))
         (else
-         #f)))
+         (list x))))
 
 ;---------------------------------------------VERIFICACION DE LOS CLICKS-------------------------------------------------------------------
 
@@ -186,20 +186,31 @@
          (dibujarX (car col) (car fila))
          punto)
         (else
-         (msj "Haga click en otra parte")))))
+         (alerta)))))
          
 
 
 ;---------------------------------------------------FUNCIONES PARA CREAR VENTANAS------------------------------------------------------------
 
+
 ;; Función para mostrar ventanas de alerta
 ;; txt: Es un string, siendo este el texto a mostrar
 
 (define (msj texto)
+  (define ventana1 (open-viewport "Alerta" 300 50))
+  ((draw-viewport ventana1) "black")
+  ((draw-string ventana1) (make-posn 50 20) texto "red")
+  (sleep 2)
+  (close-viewport ventana1))
+
+;; Función para mostrar ventanas de alerta
+;; Click fuera del rango
+
+(define (alerta)
   (define ventana2 (open-viewport "Alerta" 300 150))
   ((draw-viewport ventana2) "black")
   ((draw-pixmap ventana2) "imgs/alerta.png" (make-posn 0 0))
-  (sleep 2)
+  (sleep 1.5)
   (close-viewport ventana2))
 
 
