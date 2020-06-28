@@ -2,7 +2,14 @@
 (require graphics/graphics)
 (require racket/draw)
 (open-graphics)
-
+;;-------------------------------------------------------------------------------------------------------------------------------
+;; Código Fuente: InterfazGráfica.rkt
+;; Desarrolado por: Saymon Astúa, Oscar Araya
+;; Tarea 1 - Lenguajes
+;; IS 2020 - Grupo 01
+;;
+;; Descripción: Interfaz gráfica del juego TicTacToe
+;; Instituto Tecnológico de Costa Rica | CE3104 - Lenguajes, Compiladores e Interpretes
 
 ;;------------------------------------------------ELEMENTOS DE INICIALIZACION----------------------------------------------------
   
@@ -300,6 +307,8 @@
 
 (define (TTT m n)
   (cond ((and (>= m 3) (<= m 10) (>= n 3) (<= n 10))
+         ;; Se inicializan ciertos elementos gráficos
+         
          ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "white")
          ((draw-pixmap oculta) "imgs/fondo.jpg" (make-posn 800 0))
          ((draw-solid-rectangle oculta) (make-posn 850 65) 180 30 "black")
