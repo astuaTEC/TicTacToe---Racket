@@ -2,6 +2,11 @@
 (require graphics/graphics)
 (require racket/draw)
 (open-graphics)
+
+(require racket/include)
+(require "TicTacToeFull.rkt")
+
+
 ;;-------------------------------------------------------------------------------------------------------------------------------
 ;; Código Fuente: InterfazGráfica.rkt
 ;; Desarrolado por: Saymon Astúa, Oscar Araya
@@ -28,16 +33,22 @@
 ;Se crea un rectángulo negro de fondo
 ((draw-solid-rectangle oculta) (make-posn 0 0) horizontal vertical "black")
 
-;; Se inicializan las imagenes de inicializacion del juego
-((draw-pixmap oculta) "imgs/TTT-1.png" (make-posn 600 100))
+;; Se agregan imágenes de inicializacion del juego
 ((draw-pixmap oculta) "imgs/bv.jpg" (make-posn 200 10))
+(copy-viewport oculta ventana)
+(sleep 2)
+
+((draw-pixmap oculta) "imgs/TTT-1.png" (make-posn 600 100))
+(copy-viewport oculta ventana)
+(sleep 2)
 
 ;Se muestra un texto con las instrucciones para inicializar el juego
 ((draw-pixmap oculta) "imgs/inst.png" (make-posn 100 200))
 
+;;Esta es la matriz logica que se trabaja en el juego
+(define matriz '() )
 
-
-;-------------------------------------------------------TABLERO GRAFICO---------------------------------------------------------
+;-------------------------------------------------------TABLERO GRÁFICO---------------------------------------------------------
 
 ;; Funcion para crear el tablero TicTacToe
 ;; m: número de filas. Número entero
@@ -99,6 +110,7 @@
 ;----------------------------------------------FUNCIONES PARA IMPLEMENTAR EL MOUSE------------------------------------------------------
 
 ;; Función para saber si se hace click izquierdo
+;; Es prácticamente el ciclo principal del juego, desde donde se hacen llamadas a las demás funciones
 ;; en la ventana del juego, obteniendo las coordenadas X y Y en pixeles
 ;; m: tamaño de filas disponible para dibujar (numero)
 ;; n: tamaño de columnas disponible para dibujar (numero)
@@ -109,9 +121,9 @@
          (x (posn-x (query-mouse-posn ventana)))
          (y (posn-y (query-mouse-posn ventana))))
   (cond ((equal? (left-mouse-click? click)
-         (mouse m n (pegar lista (list (verificarDibujoX x y n m lista))))))
+         (mouse m n (append lista (verificarDibujoX x y m n lista))  )))
   (else
-   (mouse m n lista)))))
+   (mouse m n lista )))))
 
 
 ;; Función que devuelve la fila
@@ -173,7 +185,7 @@
         (else
          (list x))))
 
-;---------------------------------------------VERIFICACION DE LOS CLICKS-------------------------------------------------------------------
+;---------------------------------------------VERIFICACION DE LOS CLICKS Y EJECUCIÓN DE TURNOS-------------------------------------------------------------------
 
 ;; Función para verificar si la
 ;; cuadrícula disponible permite
@@ -188,13 +200,80 @@
 (define (verificarDibujoX x y m n lista)
   (let* ((fila (darFila y))
          (col (darCol x))
-         (punto (cons (car fila) col )))
-  (cond (( and (<= (car fila) m) (<= (car col) n) (not (miembro? punto lista)))
+         (punto (cons (car col) fila)))
+  (cond (( and (<= (car fila) n) (<= (car col) m) (not (miembro? punto lista)))
          (dibujarX (car col) (car fila))
-         punto)
+         (turnoJugador col fila n)
+         (let* ((resultado turnoMaquina))
+           (cond ((null? resultado)
+                  (list punto))
+                 (else
+                  (append (list (turnoMaquina)) (list punto))))))
         (else
-         (alerta)))))
+         (alerta)
+         '()))))
          
+
+;; Función para poner una ficha por parte del jugador
+;; lo que hace es poner dentro de una matriz lógica la ficha
+;; que el jugador quiere poner en pantalla
+;; Se valida si existe un empate o una victoria
+;; solamente actualiza la matriz logica, no retorna nada
+
+(define (turnoJugador col fila m)
+  (let* ( (resultado (colocarFichaJugador (car fila) (car col) 1 m matriz matriz '() 1))
+          (linea (car resultado))
+          (pos (cadr resultado))
+          (nuevaMatriz (caddr resultado)))
+    (cond ((null? linea)
+           (verificarEmpate)
+           (set! matriz nuevaMatriz))
+          (else
+           (dibujarLineaHD (cadar linea) (caar linea) (cadadr linea)(caadr linea))
+           (dibujarLineaV  (cadar linea) (caar linea)  (cadadr linea) (caadr linea))
+           (ventanaGanador)))))
+           
+           
+           
+;;Función para colocar la ficha de la máquina
+;; Esta tiene que llamar al algoritmo voraz
+;; En general lo que hace es colocar la ficha de la máquina en la interfaz
+;; de acuerdo al algoritmo voraz
+;; Antes de eso, se verifica si existe un empate o si la máquina ha ganado
+;; La función retorna una posición de la matriz donde es colocada la ficha. Ej: (2 4), fila 2, columna 4
+
+(define (turnoMaquina)
+  (cond ((equal? (verificarEmpate) #f)
+         (let* ( (resultado (colocarFichaMaquina matriz 2))
+          (linea (car resultado))
+          (posicion (cadr resultado))
+          (matrizNueva (caddr resultado)))
+           
+          (cond ((null? linea)
+                 (dibujarO (cadr posicion) (car posicion))
+                 (set! matriz matrizNueva)
+                 (verificarEmpate)
+                 (list (cadr posicion) (car posicion)))
+                (else
+                 (dibujarO (cadr posicion) (car posicion))
+                 (dibujarLineaHD (cadar linea) (caar linea) (cadadr linea)(caadr linea))
+                 (dibujarLineaV  (cadar linea) (caar linea)  (cadadr linea) (caadr linea))
+                 (ventanaPerdedor)
+                 '()))))
+        )
+  )
+        
+
+;; funcion verificar empate
+;; Si la el tablero está lleno, devuelve #t y se muestra un empate en pantalla
+;; En caso contrario, devuelve #f
+
+(define (verificarEmpate)
+  (cond (( equal? (matrizLlena matriz) #t)
+         (ventanaEmpate)
+         #t)
+        (else
+         #f)))
 
 
 ;---------------------------------------------------FUNCIONES PARA CREAR VENTANAS------------------------------------------------------------
@@ -242,6 +321,17 @@
   (close-viewport ventana)
   (close-viewport ventana4))
 
+
+;; Función para mostrar la ventana en caso de empate
+
+(define (ventanaEmpate)
+  (define ventana5 (open-viewport "Empate" 600 320))
+  ((draw-viewport ventana5) "black")
+  ((draw-pixmap ventana5) "imgs/empate.png" (make-posn 0 0))
+  (sleep 4)
+  (close-viewport ventana)
+  (close-viewport ventana5))
+
 ;----------------------------------------------------LINEAS GRAFICAS--------------------------------------------------------------------
 
 ;;Funcion para dibijar una linea entre 2 puntos (Horizontal y Diagonal)
@@ -249,7 +339,7 @@
 ;; col1, fila1: posiciones desde donde sale la linea (posiciones en la matriz)
 ;; col2, fila2: posiciones hasta donde llega la linea (posiciones en la matriz)
 
-(define (dibujarLineaHD fila1 col1 fila2 col2)
+(define (dibujarLineaHD col1 fila1 col2 fila2)
   ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 27)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 27)) "black")
   ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 26)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 26)) "black")
   ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 25)) "black")
@@ -263,7 +353,7 @@
 ;; col1, fila1: posiciones desde donde sale la linea (posiciones en la matriz)
 ;; col2, fila2: posiciones hasta donde llega la linea (posiciones en la matriz)
 
-(define (dibujarLineaV fila1 col1 fila2 col2)
+(define (dibujarLineaV col1 fila1 col2 fila2)
   ((draw-line oculta) (make-posn (+ 65 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 65 (* 65 col2)) (- (* 65 fila2) 25)) "black")
   ((draw-line oculta) (make-posn (+ 66 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 66 (* 65 col2)) (- (* 65 fila2) 25)) "black")
   ((draw-line oculta) (make-posn (+ 67 (* 65 col1)) (- (* 65 fila1) 25)) (make-posn (+ 67 (* 65 col2)) (- (* 65 fila2) 25)) "black")
@@ -318,17 +408,23 @@
          ((draw-solid-rectangle oculta) (make-posn 855 380) 180 30 "black")
          ((draw-string oculta) (make-posn 875 400) "LA FICHA RIVAL ES:" "red")
          ((draw-pixmap oculta) "imgs/circulo-22.png" (make-posn 880 415))
+
+         ;;se crea el tablero gráfico
          (crearLineas m n)(copy-viewport oculta ventana)
-         ;(dibujarLineaHD 1 1 1 10)
-         ;(dibujarLineaV 1 1 10 1)
+
+
+         ;Se llama a la parte lógica (TTTB m n)
+         ;devuelve la matriz a trabajar
+         (set! matriz (TTTB m n))
+
          (mouse m n '()))
+        
         (else
          (msj "Inserte números válidos"))))
 
 
 
+
 (copy-viewport oculta ventana)
-
-
 
 
