@@ -1,5 +1,15 @@
+  
 #lang racket
 
+
+;;-------------------------------------------------------------------------------------------------------------------------------
+;; Código Fuente: TicTacToe.rkt
+;; Desarrolado por: Oscar Araya, SAymon Astúa
+;; Tarea 1 - Lenguajes
+;; IS 2020 - Grupo 01
+;;
+;; Descripción: Algoritmo voraz del juego TicTacToe
+;; Instituto Tecnológico de Costa Rica | CE3104 - Lenguajes, Compiladores e Interpretes
 
 
 ;--------------------------------------------------------INICIO DEL JUEGO----------------------------------------------------------------------
@@ -48,42 +58,6 @@ decir que se agregan n casillas m veces dentro de la matriz.
       filaCrear
    )  
 )     
-;--------------------------------------------------------CICLO DEL JUEGO-----------------------------------------------------------------------
-#|
-Funcion que se encarga de seguir el flujo del juego. Recibe como parametros la matriz previamente creada, ademas del jugador actual que esta
-colocando la ficha en ese turno. Por defecto, el usuario siempre inicia la partida. Se ha definido al usuario como jugadorActual 1 y a la
-maquina como jugadorActual 2.
-
-Primero, se revisa, por medio de la funcion hayGanador, si el jugador actual ha colocado la ficha que, segun los criterios y las reglas de la
-partida, le permita declararse ganador de la misma.
-
-En caso de no existir ganador, el cicloDeJuego, por medio del parametro jugadorActual, decide si el usuario o la maquina debe ser el que
-coloque una ficha en el turno (o iteracion recursiva) actual.
-
-Si es el usuario el que debe colocar una ficha, se llama al cicloDeJuego con una matriz actualizada proveniente de ejecutarMovimientoJugador,
-y se cambia el jugador actual a 2.
-
-Si es la maquina la que debe colocar una ficha, se llama al cicloDeJuego con una matriz actualizada proveniente de ejecutarAlgoritmoVoraz,
-y se cambia el jugador actual a 1.
-|#
-
-#|
-(define (cicloDeJuego matriz jugadorActual)
-  (if (equal? (hayGanador matriz '() '() jugadorActual)  #t)
-      (print "Fin del juego")
-      (if (= jugadorActual 1)
-          (cicloDeJuego (ejecutarMovimientoJugador matriz (string->number (read-line)) (string->number (read-line)) (length matriz) (length (car matriz)))        
-                        2
-          ) 
-          (cicloDeJuego (cadr (colocarFichaMaquina matriz 2))
-                        1
-          )
-      )
-  )     
-)
-
-|#
-
 ;-----------------------------------------------------TURNO DEL JUGADOR-----------------------------------------------------------------------
 #|
 Funcion que se encarga de ejecutar el movimiento seleccionado por el usuario. Recibe como parametros la matriz, la columna y la fila donde se
@@ -104,7 +78,7 @@ En caso de que la posicion m n corresponda a una de las posibles dimensiones, se
       (if (> nPosicion nMaximo)
           (notificarError 2 matriz mMaximo nMaximo)          
           (if (= (encontrarFichaPorPosicion matriz mPosicion nPosicion '()) 0)
-              (colocarFichaJugador mPosicion nPosicion 1 mMaximo matriz '() 1)
+              (colocarFichaJugador mPosicion nPosicion 1 mMaximo matriz matriz '() 1)
               (notificarError 3 matriz mMaximo nMaximo)
           )
      )
@@ -132,17 +106,13 @@ Es importante mencionar que la condicion de parada de esta llamada recursiva es 
 cantidad de columnas de la matriz), momento en el cual se ha recorrido, reconstruido y actualizado toda la matriz nueva a partir de la matriz
 original, y procede a llamarse a la funcion  actualizarMatriz.
 |#
-(define (colocarFichaJugador mPosicion nPosicion contador mTotal matriz matrizNueva elemento)
-  (display "Colocando en ")
-  (display mPosicion)
-  (display " " )
-  (display nPosicion)
-  (display "\n")
+(define (colocarFichaJugador mPosicion nPosicion contador mTotal matrizRespaldo matriz matrizNueva elemento)
   (if (= mPosicion contador)
       (colocarFichaJugador mPosicion
                            nPosicion
                            (+ contador 1)
                            mTotal
+                           matrizRespaldo
                            (cdr matriz)
                            (append matrizNueva (list(colocarFichaEnFila nPosicion 1 (length (car matriz)) (car matriz) '() elemento)))
                            elemento
@@ -152,6 +122,7 @@ original, y procede a llamarse a la funcion  actualizarMatriz.
                                nPosicion
                                (+ contador 1)
                                mTotal
+                               matrizRespaldo
                                (cdr matriz)
                                (append matrizNueva (list(car matriz)))
                                elemento
@@ -161,15 +132,17 @@ original, y procede a llamarse a la funcion  actualizarMatriz.
                                    nPosicion
                                    (+ contador 1)
                                    mTotal
+                                   matrizRespaldo
                                    (cdr matriz)
                                    (append matrizNueva (list(car matriz)))
                                    elemento
               )
-              (actualizarMatriz matrizNueva)   
+              (actualizarMatriz matrizRespaldo matrizNueva mPosicion nPosicion elemento)   
           )
       )
   )   
 )
+
 #|
 Funcion auxiliar que se encarga de colocar las fichas en la columna especifica, encontrada a partir de la funcion anterior. Recibe como
 parametros a la posicion dentro de la fila a donde se quiere colocar la ficha, un contador que facilite el recorrido dentro de la fila,
@@ -216,12 +189,108 @@ a la funcion colocarFichaJugador, para que esta siga reconstruyendo la matriz.
 Funcion encargada de mostrar al usuario la matriz actualizada en consola, ademas de devolverla al cicloDeJuego para que este pueda seguir
 su correcto funcionamiento una vez que el usuario coloca una ficha. Recibe como parametros unicamente a la matriz actualizada.
 |#
-(define (actualizarMatriz matrizNueva)
-  (display matrizNueva)
+(define (actualizarMatriz matriz matrizNueva mPosicion nPosicion elemento)
+  (display "REVISANDO ")
+  (display (append (list mPosicion) (list nPosicion)))
+  (display (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Logica"))
+  (display matriz)
   (display "\n")
-  matrizNueva
-)
 
+  
+  (if (= elemento 1)
+      (if (equal? (revisarGaneHorizontal (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                         (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                         (length (car matriz))
+                                         '()
+                                         (encontrarFichasColocadas matriz '() 0 1 0 '())
+                  )
+                  (append (list mPosicion) (list nPosicion))
+          )
+          (printPrueba(append (list (append (list (append (list (car (revisarGaneHorizontal (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                (length (car matriz))
+                                                                                '()
+                                                                                (encontrarFichasColocadas matriz '() 0 1 0 '())
+                                                         )
+                                                    )
+                                              )
+                                              (list 1)
+                                      )
+                                )
+                                (list (append (list (car (revisarGaneHorizontal (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                (length (car matriz))
+                                                                                '()
+                                                                                (encontrarFichasColocadas matriz '() 0 1 0 '())
+                                                         )
+                                                    )
+                                              )
+                                              (list (length (car matriz)))
+                                      )
+                               )
+                        )
+                  )                    
+                  (list (append (list mPosicion) (list nPosicion)))
+                  (list matrizNueva)
+          ))
+          (if (equal? (revisarGaneVertical (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                           (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                           (length matriz)
+                                           '()
+                                           (encontrarFichasColocadas matriz '() 0 1 0 '())
+                      )
+                      (list (append (list mPosicion) (list nPosicion)))
+              )
+              (printPrueba(append (list (append (list (append (list (cadr (revisarGaneVertical (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                   (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                   (length matriz)
+                                                                                   '()
+                                                                                   (encontrarFichasColocadas matriz '() 0 1 0 '())
+                                                             )
+                                                        )
+                                                  )
+                                                  (list 1)
+                                          )
+                                    )
+                                    (list (append (list (cadr (revisarGaneVertical (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                   (encontrarFichasColocadas matriz '() 0 1 1 '())
+                                                                                   (length matriz)
+                                                                                   '()
+                                                                                   (encontrarFichasColocadas matriz '() 0 1 0 '())
+                                                             )
+                                                       )
+                                                  )
+                                                  (list (length matriz))
+                                          )
+                                    )
+                            )
+                      )
+                      (list (append (list mPosicion) (list nPosicion)))
+                      (list matrizNueva)
+              ))
+              (if (equal? (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Logica")
+                          (append (list mPosicion) (list nPosicion))
+                  )
+                  (printPrueba(append (list (append (list (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Interfaz")))
+                                                    (list (ultimoElementoLista (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Interfaz")))
+                                )
+                          )
+                          (list (append (list mPosicion) (list nPosicion)))
+                          (list matrizNueva)
+                  ))
+
+                  (printPrueba(append (list '())
+                          (list (append (list mPosicion) (list nPosicion)))
+                          (list matrizNueva)
+                  ))
+              )
+          )
+      )
+  matrizNueva
+  )
+
+)
+             
 #|
 Funcion encargada de la notificacion y correcion de errores en la colocacion de fichas. Recibe como parametros un codigo de error, la matriz,
 y las dimensiones de la misma. En caso de que el usuario coloque un valor de m o n mayor a los permitidos, le sera notificado por medio de
@@ -321,20 +390,7 @@ por lo que se llega a la posicion de parada y se retorna el car de la mActual (q
           )
      )
   )
-)
-
-                                              
-                  
-                                       
-                                 
-                        
-          
-          
-          
-
-
-
-                                    
+)                                    
 #|
 Funcion auxiliar utilizada para notificar al usuario de las posiciones donde se encuentran sus fichas y las de la maquina. Recibe como
 parametros a la lista de tuplas de las posiciones, ademas del elemento que se busco (puede ser 1 o 2).
@@ -357,6 +413,12 @@ Finalmente se retorna la lista de posiciones para el resto de funciones que asi 
   (display "\n")
   posiciones   
 )
+(define (ultimoElementoLista lista)
+  (if (null? (cdr lista))
+      (car lista)
+      (ultimoElementoLista (cdr lista))
+  )
+)
 ;--------------------------------------------------------TURNO DE LA MAQUINA-------------------------------------------------------------------
 #|
 Funcion encargada de colocar la ficha de la maquina. Recibe como parametros la matriz de juego y el elemento que se colocara dentro de la misma,
@@ -364,7 +426,6 @@ que es por defecto un 2. Esta funcion tiene la finalidad de ayudar a controlar e
 con la funcion respectiva del turno del usuario. Basicamente inicializa el algoritmo voraz.
 |#
 (define (colocarFichaMaquina matriz elemento)
-  (display "Ejecutando turno de la maquina \n")
   (ejecutarAlgoritmoVoraz matriz)
 )
 
@@ -483,7 +544,6 @@ candidatos, por lo que antes de cada colocacion de fichas, se llama a la funcion
           (append (list (car fichaAnalizar)) (list contador))
           '()
       )
-
       (if (= contador (car presentes))
           (determinarFichaParaGanarHorizontal (cdr presentes)
                                               fichaAnalizar
@@ -542,7 +602,7 @@ cuantas fichas hay presentes dentro de una columna, y poder decidir si se puede 
       (if (= (length fichasMaquina) 1)
           (if (= (cadar fichasMaquina) (cadr fichaAnalizar))
               (fichaParaGanarVertical (cdr fichasMaquina)
-                                        fichaAnalizar
+                                       fichaAnalizar
                                         nParaGanar
                                         (append presentes (list (caar fichasMaquina)))
                                         candidatos
@@ -600,19 +660,58 @@ una posicion (m n), debido a que la linea que se quiere formar es vertical.
       )
   ) 
 )
-
-;=======================================================================================================================
-
-
+#|
+Función que se encarga de retornar todas las diagonales válidas que podrían generar un gane dentro de la matriz de juego. Recibe como parámetro a la matriz.
+Se compone de cuatro subfunciones que encuentran las diagonales de tipo descendentes y ascendentes, en dos variantes denominadas “diagonales verticales” y “diagonales horizontales”.
+|#
 (define (diagonalesValidas matriz)
-  (append (diagonalesDescendentesVerticales (length (car matriz)) (length matriz) 1 (length matriz) (length matriz) '() '())
-          (diagonalesDescendentesHorizontales (length (car matriz)) (length matriz) 2 1 2 '() '())
-          (descartarDiagonales (diagonalesAscendentesVerticales (length (car matriz)) (length matriz) (length (car matriz)) (length matriz) (length matriz) '() '()) '())
-          (descartarDiagonales (diagonalesAscendentesHorizontales (length (car matriz)) (length matriz) (- (length (car matriz)) 1) 1 (- (length (car matriz)) 1) '() '()) '())
+  (append (diagonalesDescendentesVerticales (length (car matriz))
+                                            (length matriz)
+                                            1
+                                            (length matriz)
+                                            (length matriz)
+                                            '()
+                                            '()
+          )
+          (diagonalesDescendentesHorizontales (length (car matriz))
+                                              (length matriz)
+                                              2
+                                              1
+                                              2
+                                              '()
+                                              '()
+          )
+          (descartarDiagonales (diagonalesAscendentesVerticales (length (car matriz))
+                                                                (length matriz)
+                                                                (length (car matriz))
+                                                                (length matriz)
+                                                                (length matriz)
+                                                                '()
+                                                                '()
+                               )
+                               '()
+          )
+          (descartarDiagonales (diagonalesAscendentesHorizontales (length (car matriz))
+                                                                  (length matriz)
+                                                                  (- (length (car matriz)) 1)
+                                                                  1
+                                                                  (- (length (car matriz)) 1)
+                                                                  '()
+                                                                  '()
+                               )
+                               '()
+          )
   )           
 )
-
-    
+#|
+Función encargada de identificar las diagonales de tipo ascendente vertical que se encuentran dentro de la matriz.
+Recibe como parámetros a la cantidad de columnas mMax, la cantidad de filas nMax, un contador de la fila nActual, un contador de la fila donde comenzó
+la diagonal actual nInicio, la diagonalActual que se va conformando de manera recursiva, y la lista de diagonales que este tipo que pueden ser formadas.
+Esta función va recorriendo, por cada nInicio (que inicia en nMax y termina en 0) el diagonal que se puede formar hasta llegar a un punto donde no queden
+posiciones que agregar al diagonalActual. Lleva un recuento del nActual y mActual, y en el momento en que ambas superen a nMax y mMax respectivamente,
+se sabe que no quedan posiciones en diagonal que agregar al diagonalActual, por lo que se procede a repetir el proceso, pero reduciendo la fila donde
+empieza el diagonal nInicio, con el fin de considerar todos los diagonales de tipo ascendente vertical.
+|#  
 (define (diagonalesAscendentesVerticales mMax nMax mActual nActual nInicio diagonalActual diagonales)
   (if (= nInicio 0)
       diagonales
@@ -639,9 +738,14 @@ una posicion (m n), debido a que la linea que se quiere formar es vertical.
                                                nInicio
                                                (append diagonalActual (list (append (list nActual) (list mActual))))
                                                 diagonales)))))
-
-
-
+#|
+Función encargada de identificar las diagonales de tipo descendente vertical que se encuentran dentro de la matriz.
+Recibe como parámetros a la cantidad de columnas mMax, la cantidad de filas nMax, un contador que indica el mActual,
+un contador que indica el nActual, un contador mInicio que indica la columna donde inició el diagonal actual, el
+diagonalActual y la lista de diagonales de tipo descendentes verticales. De igual manera que la función anterior,
+va analizando cada diagonal hasta que se llega a que mInicio es mayor a mMax, por lo que se dice que no quedan diagonales
+de tipo descendente vertical.
+|#  
 (define (diagonalesAscendentesHorizontales mMax nMax mActual nActual mInicio diagonalActual diagonales)
   (if (= mInicio 0)
       diagonales
@@ -668,12 +772,7 @@ una posicion (m n), debido a que la linea que se quiere formar es vertical.
                                                  mInicio
                                                  (append diagonalActual (list (append (list nActual) (list mActual))))
                                                  diagonales)))))
-                                               
-                                                 
-                                                   
-              
-                                               
-                                           
+                                                                                  
 (define (diagonalesDescendentesVerticales mMax nMax mActual nActual nInicio diagonalActual diagonales)
   (if (= nInicio 0)
       diagonales
@@ -712,12 +811,7 @@ una posicion (m n), debido a que la linea que se quiere formar es vertical.
                                                 nInicio
                                                 diagonalActual
                                                 diagonales
-              )
-          )       
-      )      
-  )
-)
-
+              )))))
 
 (define (diagonalesDescendentesHorizontales mMax nMax mActual nActual mInicio diagonalActual diagonales)
   (if (> mInicio mMax)
@@ -730,17 +824,14 @@ una posicion (m n), debido a que la linea que se quiere formar es vertical.
                                                   1
                                                   (+ mInicio 1)
                                                   '()
-                                                  (append diagonales (list diagonalActual))
-              )
+                                                  (append diagonales (list diagonalActual)))
               (diagonalesDescendentesHorizontales mMax
                                                   nMax
                                                   (+ mInicio 1)
                                                   1
                                                   (+ mInicio 1)
                                                   '()
-                                                  diagonales
-               )
-          )
+                                                  diagonales))
           (if (> mActual mMax)
               (if (> (length diagonalActual) 2)
                   (diagonalesDescendentesHorizontales mMax
@@ -749,94 +840,199 @@ una posicion (m n), debido a que la linea que se quiere formar es vertical.
                                                       1
                                                       (+ mInicio 1)
                                                       '()
-                                                      (append diagonales (list diagonalActual))
-                  )
+                                                      (append diagonales (list diagonalActual)))
                   (diagonalesDescendentesHorizontales mMax
                                                       nMax
                                                       (+ mInicio 1)
                                                       1
                                                       (+ mInicio 1)
                                                       '()
-                                                      diagonales
-                  )
-              )
+                                                      diagonales))
               (diagonalesDescendentesHorizontales mMax
                                                   nMax
                                                   (+ mActual 1)
                                                   (+ nActual 1)
                                                   mInicio
                                                   (append diagonalActual (list (append (list nActual) (list mActual))))
-                                                  diagonales
-              )
-          )
-      )
-  )
-)
-                                                  
-          
-
-
-
+                                                  diagonales)))))
+#|
+Función que recibe como parámetros una lista de diagonales y una lista vacía de diagonalesValidos, y por medio de
+llamadas recursivas y comparaciones de cada diagonal, se determina cuales tienen una longitud mayor o igual a tres,
+por lo que pueden ser consideradas diagonalesValidos. Al analizar cada diagonal de diagonales, retorna la lista de diagonalesValidos.
+|# 
 (define (descartarDiagonales diagonales diagonalesValidos)
   (if (null? diagonales)
       diagonalesValidos
       (if (>= (length (car diagonales)) 3)
           (descartarDiagonales (cdr diagonales) (append diagonalesValidos (list (car diagonales))))
           (descartarDiagonales (cdr diagonales) diagonalesValidos))))
-
-                  
-
-
-
-
-
-
-
-(define (revisarGaneDiagonal matriz diagonales fichaGanar usuario)
+#|
+Función encargada de analizar si existe una posición en la cual, en caso de colocar una ficha, se produzca un gane para el jugador.
+Recibe como parámetros a la matriz, una lista de diagonales válidos, la posible fichaGanar (que por defecto es nula), el usuario
+(jugador o maquina) que quiere revisar si existe una posición para ganar y un código de tipo string que se utiliza más adelante
+para saber si la información requerida es para la parte lógica o la parte de interfaz. De igual manera que con revisarGaneHorizontal
+y revisarGaneVertical, se llama esta función de forma recursiva hasta que analizarDiagonal retorne una posición que no sea nula,
+o se acaben los posibles diagonales.
+|# 
+(define (revisarGaneDiagonal matriz diagonales fichaGanar usuario codigo)
   (if (null? diagonales)
       fichaGanar
       (if (null? fichaGanar)
           (revisarGaneDiagonal matriz
                                (cdr diagonales)
-                               (analizarDiagonal matriz usuario (car diagonales) (car diagonales) 0)
-                               usuario)
-          fichaGanar)))
-
-(define (analizarDiagonal matriz usuario diagonal diagonalAuxiliar cantidad)
+                               (analizarDiagonal matriz usuario (car diagonales) (car diagonales) 0 codigo)
+                               usuario
+                               codigo)
+          fichaGanar
+      )
+  )
+)
+#|
+Función encargada de analizar cada diagonal para determinar si existe un posible gane dentro de la misma. Recibe como parámetros a la matriz,
+al usuario que quiere verificar si puede ganar, el diagonal a analizar, una copia de la diagonal a analizar diagonalAuxiliar, la cantidad de
+fichas que hay en el diagonal, y el mismo código de la función anterior. Por cada posición dentro del diagonal, y en caso de que la función
+analizarPosicionDiagonal retorne un true, se suma un 1 a la cantidad, por lo que, al terminarse las posiciones de diagonal, y si la cantidad
+está a una unidad de la longitud de diagonalAuxiliar, se retorna el diagonalAuxiliar o la posición para ganar proveniente de
+determinarFichaParaGanarDiagonal, en función de si el código es “Interfaz” o “Lógica”. El motivo por el cual se utiliza el código es porque,
+para la interfaz se tienen que enviar solo la posición inicial y final de la diagonal (con el fin de dibujar la línea del gane), y para la lógica
+se tiene que retornar únicamente la posición que permita el gane.
+|# 
+(define (analizarDiagonal matriz usuario diagonal diagonalAuxiliar cantidad codigo)
   (if (null? diagonal)
       (if (= (+ cantidad 1) (length diagonalAuxiliar))
-          (determinarFichaGaneDiagonal matriz diagonalAuxiliar)
+          (determinarFichaGaneDiagonal matriz diagonalAuxiliar diagonalAuxiliar codigo)
           '())
       (analizarDiagonal matriz
                         usuario
                         (cdr diagonal)
                         diagonalAuxiliar
-                        (+ cantidad (analizarPosicionDiagonal matriz usuario (car diagonal))))))
-
-
+                        (+ cantidad (analizarPosicionDiagonal matriz usuario (car diagonal)))
+                        codigo)))
+#|
+Función que recibe como parámetros a la matriz, el usuario que se busca y la posición en la que se busca dentro de la matriz.
+Se utilizar a la función encontrarFichaPorPosicion para determinar si en esa posición específica existe una ficha de valor usuario (1 o 2).
+De ser así retorna un 1 que es sumado a la cantidad de la función anterior.
+|# 
 (define (analizarPosicionDiagonal matriz usuario posicion)
   (if (= (encontrarFichaPorPosicion matriz (car posicion) (cadr posicion) '()) usuario)
       1
       0))
-  
-  
-(define (determinarFichaGaneDiagonal matriz diagonal)
+#|
+Función utilizada para determinar cuál es la posición donde hace falta una ficha dentro del diagonal. Recibe como parámetros a la matriz y a la diagonal.
+Por cada elemento posición dentro de diagonal, se verifica si analizarPosicionVaciaDiagonal retorna un true. De ser así, quiere decir que la posición actual
+dentro de la diagonal es vacía, por lo que se retorna dicha posición. De no ser así, se procede con la siguiente posición de la diagonal, hasta que la misma sea nula.
+|# 
+(define (determinarFichaGaneDiagonal matriz diagonal diagonalAuxiliar codigo)
   (if (null? diagonal)
       '()
       (if (analizarPosicionVaciaDiagonal matriz (car diagonal))
-          (car diagonal)
-          (determinarFichaGaneDiagonal matriz (cdr diagonal)))))
-      
-   
+          (if (equal? codigo "Interfaz")
+              diagonalAuxiliar
+              (car diagonal))
+          (determinarFichaGaneDiagonal matriz (cdr diagonal) diagonalAuxiliar codigo))))
 (define (analizarPosicionVaciaDiagonal matriz posicion)
   (if (= (encontrarFichaPorPosicion matriz (car posicion) (cadr posicion) '()) 0)
       #t
       #f))
-  
-
-  
-  
-;=======================================================================================================================
+#|
+Función encargada de que la máquina conforme sus líneas, en caso no poder ganar o no tener que colocar fichas para no perder.
+Recibe como parámetros las fichasUsuario, el usuario que va a conformar la línea, una lista de posibles posiciones para conformar que se va rellenando recursivamente,
+y una lista de candidatos que contiene todas las posiciones vacías dentro de la matriz. Por cada ficha del usuario, esta función agrega nuevas posibles posiciones
+por medio de la función actualizarPosicionesConformar, y al ser la lista de fichasUsuario vacía, se llama a la función seleccionarPosicionesConformar,
+que determinará en cual de las posibles posiciones hay que conformar la línea.
+|# 
+(define (conformarLineas matriz fichasUsuario usuario posibles candidatos)
+  (if (null? fichasUsuario)
+      (seleccionarPosicionConformar matriz posibles (random (length candidatos)) (car candidatos) candidatos)
+      (conformarLineas matriz
+                       (cdr fichasUsuario)
+                       usuario
+                       (actualizarPosicionConformar posibles
+                                                    (caar fichasUsuario)
+                                                    (cadar fichasUsuario)
+                                                    (length (car matriz))
+                                                    (length matriz)
+                                                    candidatos
+                                                    #t #t #t #t
+                                                    )
+                       candidatos
+      )
+  )
+)
+#|
+Función encargada de determinar en cuales posibles posiciones podría la máquina continuar conformando sus líneas. Recibe como parámetro una
+lista de posibles soluciones que cada vez se va llenando, un valor mParaConformar que indica la posición m de la ficha que está siendo analizada,
+un valor nParaConformar que indica la posición n de la ficha que está siendo analizada, un valor mMax para verificar si la posible posición excede
+el máximo de columnas, un valor nMax para verificar si la posible posición excede el máximo de filas, y las cuatro coordenadas cartesianas N E S O
+como banderas que cambiarán de true a false si ya se han revisado las posiciones adyacentes en dichas coordenadas. Esta función se llama a si misma
+en el orden N E S O, cambiando en cada iteración los valores de estas banderas a false (para no repetir validaciones), con el fin de revisar cada
+“vecino” de las fichas que previamente se han colocado. Para ser tomado en cuenta como un “vecino” válido, y ser colocado dentro de posibles,
+se debe cumplir que la posición de dicho “vecino” no exceda a mMax o nMax, además de que su posición m y n debe ser mayor que 0. Una vez que se
+evaluan las cuatro coordenadas N E S O, se retorna la lista de posibles.
+|# 
+(define (actualizarPosicionConformar posibles mParaConformar nParaConformar mMax nMax candidatos N E S O)
+  (if (equal? N #t)
+      (if (and (> nParaConformar 1) (revisarCandidatos candidatos (append (list nParaConformar) (list (- mParaConformar 1)))))
+          (actualizarPosicionConformar (append posibles (list (append (list mParaConformar) (list (- nParaConformar 1)))))
+                                       mParaConformar nParaConformar mMax nMax candidatos #f E S O
+          )
+          (actualizarPosicionConformar posibles mParaConformar nParaConformar mMax nMax candidatos #f E S O)
+      )
+      (if (equal? E #t)
+          (if (and (< mParaConformar mMax) (revisarCandidatos candidatos (append (list (+ mParaConformar 1)) (list nParaConformar))))
+              (actualizarPosicionConformar (append posibles (list (append (list (+ mParaConformar 1)) (list nParaConformar))))
+                                           mParaConformar nParaConformar mMax nMax candidatos N #f S O
+              )
+              (actualizarPosicionConformar posibles mParaConformar nParaConformar mMax nMax candidatos N #f S O)
+          )
+          (if (equal? S #t)
+              (if (and (< nParaConformar nMax) (revisarCandidatos candidatos (append (list mParaConformar) (list (+ mParaConformar 1)))))
+                  (actualizarPosicionConformar (append posibles (list (append (list mParaConformar) (list (+ mParaConformar 1)))))
+                                               mParaConformar nParaConformar mMax nMax candidatos N E #f O
+                  )
+                  (actualizarPosicionConformar posibles mParaConformar nParaConformar mMax nMax candidatos N E #f O)
+              )
+              (if (equal? O #t)
+                  (if (and (> mParaConformar 1) (revisarCandidatos candidatos (append (list (- mParaConformar 1)) (list nParaConformar))))
+                      (actualizarPosicionConformar (append posibles (list (append (list (- mParaConformar 1)) (list nParaConformar))))
+                                                   mParaConformar nParaConformar mMax nMax candidatos N E S #f
+                      )
+                      (actualizarPosicionConformar posibles mParaConformar nParaConformar mMax nMax candidatos N E S #f)
+                  )
+                  posibles
+              )
+          )
+      )
+  )
+)
+(define (seleccionarPosicionConformar matriz posibles posicion candidatoActual candidatos)
+  (if (> posicion 1)
+      (seleccionarPosicionConformar matriz posibles (- posicion 1) (car candidatos) (cdr candidatos))
+      candidatoActual
+  )
+)
+#|
+Función encargada de colocar la ficha correspondiente al caso de conformar línea. Recibe como parámetros a la matriz y a l
+a posición de la fichaColocar. Se encarga de formar el mensaje para la interfaz con la forma indicada en el código a continuación.
+|# 
+(define (colocarFichaConformarLineas matriz fichaColocar)
+  (printPrueba(append (list '())
+                      (list (append (list (car fichaColocar))
+                      (list (cadr fichaColocar))
+              )
+          )
+          (list (colocarFichaJugador (car fichaColocar)
+                                     (cadr fichaColocar)
+                                     1
+                                     (length matriz)
+                                     matriz
+                                     matriz
+                                     '()
+                                     2
+                )
+          )          
+  ))
+)
 #|
 Funcion utilizada para revisar la lista de candidatos y determinar si una posicion es valida para colocar una ficha en la matriz. Recibe como
 parametros a la lista de candidatos y a la posicion donde se quiere colocar la ficha.
@@ -862,7 +1058,7 @@ candidatos.
           (revisarCandidatos (cdr candidatos) posicion)
        )
   )
-)       
+)
 ;----------------------------------------------------------ALGORITMO VORAZ---------------------------------------------------------------------
 #|
 Funcion que inicia la ejecucion del algoritmo voraz. Es llamada cada vez que la maquina tiene que colocar una ficha, y por medio de las
@@ -894,118 +1090,175 @@ Segunda parte del algoritmo voraz. Esta funcion se encarga de determinar la viab
 a la matriz, la lista de posibles candidatos, las fichas colocadas por el jugador, y las fichas colocadas por la maquina.
 |#
 (define (funcionDeViabilidad matriz candidatosParaColocar fichasJugador fichasMaquina)
-
   ;Maquina revisa si puede ganar de forma horizontal
   (if (not (null? (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar)))
-      (append (list (append (list (car (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar)))
-                            (list (cadr (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar)))
+      (printPrueba(funcionSolucion (append (list (append (list (append (list (car (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar)))
+                                                      (list 1)
+                                  )
                             )
+                            (list (append (list (car (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar)))
+                                          (list (length (car matriz)))
+                                  )
+                            )      
                     )
-      (list (colocarFichaJugador (car (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar))
-                           (cadr (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar))
-                           1
-                           (length matriz)
-                           matriz
-                           '()
-                           2
-      ))
-      )
+              )
+              (list (append (list (car (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar)))
+                            (list (cadr (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar)))
+                    )                   
+              )
+              (list (colocarFichaJugador (car (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar))
+                                         (cadr (revisarGaneHorizontal fichasMaquina fichasMaquina (length (car matriz)) '() candidatosParaColocar))
+                                         1
+                                         (length matriz)
+                                         matriz
+                                         matriz
+                                         '()
+                                         2
+                    )
+              )
+      )))
       ;Maquina revisa si puede ganar de forma vertical
       (if (not (null? (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar)))
-          (append (list (append (list (car (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar)))
-                                (list (cadr (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar)))
+          (printPrueba(funcionSolucion(append (list (append (list (append (list 1)
+                                                          (list (cadr (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar)))
+                                      )
+                                )
+                                (list (append (list (length matriz))
+                                              (list (cadr (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar)))
+                                      )    
                                 )
                         )
-          (list (colocarFichaJugador (car (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar))
-                               (cadr (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar))
-                               1
-                               (length matriz)
-                               matriz
-                               '()
-                               2 
-          ))
-          )
+                  )
+                  (list (append (list (car (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar)))
+                                (list (cadr (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar)))
+                        )
+                  )
+                  (list (colocarFichaJugador (car (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar))
+                                             (cadr (revisarGaneVertical fichasMaquina fichasMaquina (length matriz) '() candidatosParaColocar))
+                                             1
+                                             (length matriz)
+                                             matriz
+                                             matriz
+                                             '()
+                                             2 
+                        )
+                  )        
+          )))
           ;Maquina revisa si puede ganar de forma diagonal
-          (if (not (null? (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2)))
-              (append (list (append (list (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2)))
-                                    (list (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2)))
-                                    )
+          (if (not (null? (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2 "Logica")))
+              (printPrueba(funcionSolucion(append (list (append (list (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2 "Interfaz")))
+                                    (list (ultimoElementoLista (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2 "Interfaz")))
                             )
-              (list (colocarFichaJugador (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2))
-                                   (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2))
-                                   1
-                                   (length matriz)
-                                   matriz
-                                   '()
-                                   2
-              ))
-              )
+                      )
+                      (list (append (list (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2 "Logica")))
+                                    (list (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2 "Logica")))
+                            )
+                      )
+                      (list (colocarFichaJugador (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2 "Logica"))
+                                                 (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 2 "Logica"))
+                                                 1
+                                                 (length matriz)
+                                                 matriz
+                                                 matriz
+                                                 '()
+                                                 2
+                            )
+                     )
+              )))
               ;Maquina revisa si puede perder de forma horizontal
               (if (not (null? (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar)))
-                  (append (list (append (list (car (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar)))
+                  (printPrueba(append (list '())
+                          (list (append (list (car (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar)))
                                         (list (cadr (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar)))
-                                        )
                                 )
-                  (list (colocarFichaJugador (car (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar))
-                                       (cadr (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar))
-                                       1
-                                       (length matriz)
-                                       matriz
-                                       '()
-                                       2
+                          )
+                          (list (colocarFichaJugador (car (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar))
+                                                     (cadr (revisarGaneHorizontal fichasJugador fichasJugador (length (car matriz)) '() candidatosParaColocar))
+                                                     1
+                                                     (length matriz)
+                                                     matriz
+                                                     matriz
+                                                     '()
+                                                     2
+                                )
+                         )
                   ))
-                  )
                   ;Maquina revisa si puede perder de forma vertical
                   (if (not (null? (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar)))
-                      (append (list (append (list (car (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar)))
+                      (printPrueba(append (list '())
+                              (list (append (list (car (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar)))
                                             (list (cadr (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar)))
-                                            )
                                     )
-                      (list (colocarFichaJugador (car (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar))
-                                           (cadr (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar))
-                                           1
-                                           (length matriz)
-                                           matriz
-                                           '()
-                                           2
+                              )
+                              (list (colocarFichaJugador (car (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar))
+                                                 (cadr (revisarGaneVertical fichasJugador fichasJugador (length matriz) '() candidatosParaColocar))
+                                                 1
+                                                 (length matriz)
+                                                 matriz
+                                                 matriz
+                                                 '()
+                                                 2
+                                    )
+                              )
                       ))
-                      )
                       ;Maquina revisa si puede perder de forma diagonal
-                      (if (not (null? (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1)))
-                          (append (list (append (list (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1)))
-                                                (list (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1)))
-                                                )
+                      (if (not (null? (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Logica")))
+                          (printPrueba(append (list '())
+                                  (list (append (list (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Logica")))
+                                                (list (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Logica")))
                                         )
-                          (list (colocarFichaJugador (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1))
-                                   (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1))
-                                   1
-                                   (length matriz)
-                                   matriz
-                                   '()
-                                   2
-                          ))
-                          )
-                          (append (list (append (list 0) (list 0))) (list matriz))
-                      )
+                                  )
+                                  (list (colocarFichaJugador (car (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Logica"))
+                                                             (cadr (revisarGaneDiagonal matriz (diagonalesValidas matriz) '() 1 "Logica"))
+                                                             1
+                                                             (length matriz)
+                                                             matriz
+                                                             matriz
+                                                             '()
+                                                             2
+                                        )
+                                  )
+                          )) 
+                          (colocarFichaConformarLineas matriz (conformarLineas matriz fichasJugador 1 '() candidatosParaColocar))
+                      )  
                   )
               )           
           )
       )
   )
 )
-  
- 
 
 
 
 
-
-(define (hayGanador matriz fichasJugador fichasMaquina jugadorActual)
-  (if (= jugadorActual 1)
-      (encontrarFichasColocadas matriz '() 0 1 1 '())
-      (encontrarFichasColocadas matriz '() 0 1 2 '())
-  )   
+(define (matrizLlena matriz)
+  (if (= (length (encontrarFichasColocadas matriz '() 0 1 0 '())) 0)
+      #t
+      #f
+  )
 )
 
+(define (printPrueba mensaje)
+  (display "--------------------------------------------------------------------------------------------------------")
+  (display "\n")
+  (display "El mensaje de este turno es: ") 
+  (display mensaje)
+  (display "\n")
+  (display "---------------------------------------------------------------------------------------------------------")
+  (display "\n")
+  mensaje
+  )
+
+(define (funcionSolucion mensaje)
+  (display "SOLUCIÓN GLOBAL CONSEGUIDA: La máquina ha conseguido dar con la solución global: ")
+  (display (car mensaje))
+  (display "\n")
+  mensaje
+  )
+
+
+
+
+
+;(TTT 4 4)
 (provide (all-defined-out))
-    
